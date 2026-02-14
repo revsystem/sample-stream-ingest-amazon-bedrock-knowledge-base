@@ -3,6 +3,22 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Template to create required resources to showcase how streaming data can be directly ingested into Amazon Bedrock Knowledge Base'
 
+# Parameters
+Parameters:
+  KnowledgeBaseName:
+    Type: String
+    Default: BedrockStreamIngestKnowledgeBase
+    Description: Name for the Bedrock Knowledge Base to be created manually
+    MinLength: 1
+    MaxLength: 100
+
+  DataSourceName:
+    Type: String
+    Default: BedrockStreamIngestKBCustomDS
+    Description: Name for the Custom Data Source to be created manually
+    MinLength: 1
+    MaxLength: 100
+
 # Mappings
 Mappings:
   SubnetConfig:
@@ -180,7 +196,7 @@ Resources:
     Properties:
       SubnetId: !Ref 'PrivateSubnet1'
       RouteTableId: !Ref 'PrivateRouteTable'
-  
+
   PrivateSubnet2RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
@@ -207,8 +223,8 @@ Resources:
       GroupDescription: 'Lambda Security Group'
       Tags:
         - Key: 'Name'
-          Value: !Join [ "", [ !Ref "AWS::StackName","LambdaSecurityGroup" ] ] 
-      
+          Value: !Join [ "", [ !Ref "AWS::StackName","LambdaSecurityGroup" ] ]
+
   SageMakerSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -217,7 +233,7 @@ Resources:
       GroupDescription: 'SageMaker Security Group'
       Tags:
         - Key: 'Name'
-          Value: !Join [ "", [ !Ref "AWS::StackName","SageMakerSecurityGroup" ] ] 
+          Value: !Join [ "", [ !Ref "AWS::StackName","SageMakerSecurityGroup" ] ]
 
 # Security Group Ingress Rules
 
@@ -310,7 +326,7 @@ Resources:
       IpProtocol: -1
       CidrIpv6: '::/0'
       GroupId: !Ref MSKSecurityGroup
-  
+
   MSKSecurityGroupLambdaEgress:
     Type: AWS::EC2::SecurityGroupEgress
     Properties:
@@ -437,17 +453,17 @@ Resources:
         - arn:aws:iam::aws:policy/AmazonSageMakerFullAccess
       Tags:
         - Key: 'Name'
-          Value: !Join [ "", [ !Ref "AWS::StackName","SageMakerExecutionRole" ] ] 
+          Value: !Join [ "", [ !Ref "AWS::StackName","SageMakerExecutionRole" ] ]
 
-  SageMakerIAMAccessPolicy: 
+  SageMakerIAMAccessPolicy:
     Type: AWS::IAM::Policy
-    Properties: 
+    Properties:
       PolicyName: !Sub '${AWS::StackName}SageMakerIAMAccessPolicy'
-      PolicyDocument: 
+      PolicyDocument:
         Version: "2012-10-17"
-        Statement: 
+        Statement:
           - Effect: "Allow"
-            Action: 
+            Action:
               - iam:CreateRole
               - iam:DeleteRole
               - iam:AttachRolePolicy
@@ -460,18 +476,18 @@ Resources:
               - iam:GetRolePolicy
               - iam:SimulatePrincipalPolicy
             Resource: !Sub 'arn:aws:iam::${AWS::AccountId}:*'
-      Roles: 
+      Roles:
         - Ref: 'SageMakerExecutionRole'
 
-  SageMakerCloudWatchMetricsAccessPolicy: 
+  SageMakerCloudWatchMetricsAccessPolicy:
     Type: AWS::IAM::Policy
-    Properties: 
+    Properties:
       PolicyName: !Sub '${AWS::StackName}SageMakerCloudWatchMetricsAccessPolicy'
-      PolicyDocument: 
+      PolicyDocument:
         Version: "2012-10-17"
-        Statement: 
+        Statement:
           - Effect: "Allow"
-            Action: 
+            Action:
               - cloudwatch:DeleteAlarms
               - cloudwatch:DescribeAlarms
               - cloudwatch:GetMetricData
@@ -480,18 +496,18 @@ Resources:
               - cloudwatch:PutMetricAlarm
               - cloudwatch:PutMetricData
             Resource: '*'
-      Roles: 
+      Roles:
         - Ref: "SageMakerExecutionRole"
 
-  SageMakerCloudWatchLogsAccessPolicy: 
+  SageMakerCloudWatchLogsAccessPolicy:
     Type: AWS::IAM::Policy
-    Properties: 
+    Properties:
       PolicyName: !Sub '${AWS::StackName}SageMakerCloudWatchLogsAccessPolicy'
-      PolicyDocument: 
+      PolicyDocument:
         Version: "2012-10-17"
-        Statement: 
+        Statement:
           - Effect: "Allow"
-            Action: 
+            Action:
               - logs:CreateLogGroup
               - logs:CreateLogStream
               - logs:DescribeLogGroups
@@ -506,55 +522,65 @@ Resources:
               - logs:PutResourcePolicy
               - logs:UpdateLogDelivery
             Resource: 'arn:aws:logs:*:*:*'
-      Roles: 
+      Roles:
         - Ref: "SageMakerExecutionRole"
 
-  SageMakerMSKAccessPolicy: 
+  SageMakerMSKAccessPolicy:
     Type: AWS::IAM::Policy
-    Properties: 
+    Properties:
       PolicyName: !Sub '${AWS::StackName}SageMakerMSKAccessPolicy'
-      PolicyDocument: 
+      PolicyDocument:
         Version: "2012-10-17"
-        Statement: 
+        Statement:
           - Effect: "Allow"
-            Action: 
+            Action:
               - kafka:DescribeClusterV2
               - kafka:GetBootstrapBrokers
+              - kafka:ListTopics
+              - kafka:CreateTopic
+              - kafka:DescribeTopic
+              - kafka:UpdateTopic
+              - kafka:DeleteTopic
               - kafka-cluster:Connect
               - kafka-cluster:AlterCluster
               - kafka-cluster:DescribeCluster
               - kafka-cluster:DescribeTopic
+              - kafka-cluster:CreateTopic
+              - kafka-cluster:AlterTopic
+              - kafka-cluster:AlterTopicDynamicConfiguration
+              - kafka-cluster:DeleteTopic
+              - kafka-cluster:DescribeTopicDynamicConfiguration
               - kafka-cluster:WriteData
               - kafka-cluster:ReadData
               - kafka-cluster:AlterGroup
               - kafka-cluster:DescribeGroup
             Resource: !Sub  'arn:aws:kafka:${AWS::Region}:${AWS::AccountId}:*'
-      Roles: 
+      Roles:
         - Ref: "SageMakerExecutionRole"
 
   SageMakerCloudFormationAccessPolicy:
     Type: AWS::IAM::Policy
-    Properties: 
+    Properties:
       PolicyName: !Sub '${AWS::StackName}SageMakerCloudFormationAccessPolicy'
-      PolicyDocument: 
+      PolicyDocument:
         Version: "2012-10-17"
-        Statement: 
+        Statement:
           - Effect: "Allow"
-            Action: 
+            Action:
               - cloudformation:DescribeStackResource
             Resource: !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:*'
-      Roles: 
+      Roles:
         - Ref: "SageMakerExecutionRole"
 
   SageMakerS3AccessPolicy:
     Type: AWS::IAM::Policy
-    Properties: 
+    Properties:
       PolicyName: !Sub '${AWS::StackName}SageMakerS3AccessPolicy'
-      PolicyDocument: 
+      PolicyDocument:
         Version: "2012-10-17"
-        Statement: 
+        Statement:
           - Effect: "Allow"
-            Action: 
+            Action:
               - s3:PutBucketPolicy
               - s3:PutObject
               - s3:GetObject
@@ -563,7 +589,7 @@ Resources:
               - s3:DeleteObjectVersion
               - s3:DeleteObject
             Resource: !Sub 'arn:aws:s3:::*'
-      Roles: 
+      Roles:
         - Ref: "SageMakerExecutionRole"
 
   SageMakerBedrockAccessPolicy:
@@ -574,10 +600,10 @@ Resources:
         Version: "2012-10-17"
         Statement:
           - Effect: "Allow"
-            Action: 
+            Action:
               - bedrock:AssociateAgentKnowledgeBase
               - bedrock:CreateDataSource
-              - bedrock:AllowVendedLogDeliveryForResource 
+              - bedrock:AllowVendedLogDeliveryForResource
               - bedrock:DeleteDataSource
               - bedrock:DeleteKnowledgeBase
               - bedrock:DeleteKnowledgeBaseDocuments
@@ -601,18 +627,18 @@ Resources:
               - bedrock:UpdateKnowledgeBase
               - bedrock:ListKnowledgeBases
             Resource: '*'
-      Roles: 
+      Roles:
         - Ref: "SageMakerExecutionRole"
 
   SageMakerLambdaAccessPolicy:
     Type: AWS::IAM::Policy
-    Properties: 
+    Properties:
       PolicyName: !Sub '${AWS::StackName}SageMakerLambdaAccessPolicy'
-      PolicyDocument: 
+      PolicyDocument:
         Version: "2012-10-17"
-        Statement: 
+        Statement:
           - Effect: "Allow"
-            Action: 
+            Action:
               - lambda:GetAccountSettings
               - lambda:GetEventSourceMapping
               - lambda:GetFunction
@@ -630,7 +656,7 @@ Resources:
               - lambda:UpdateFunctionConfiguration
               - lambda:GetFunctionConfiguration
             Resource: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:*'
-      Roles: 
+      Roles:
         - Ref: "SageMakerExecutionRole"
 
   LambdaExecutionRole:
@@ -654,16 +680,16 @@ Resources:
 
   LambdaBedrockAccessPolicy:
     Type: AWS::IAM::Policy
-    Properties: 
+    Properties:
       PolicyName: !Sub '${AWS::StackName}LambdaBedrockAccessPolicy'
-      PolicyDocument: 
+      PolicyDocument:
         Version: "2012-10-17"
-        Statement: 
+        Statement:
           - Effect: "Allow"
-            Action: 
+            Action:
               - bedrock:AssociateAgentKnowledgeBase
               - bedrock:CreateDataSource
-              - bedrock:AllowVendedLogDeliveryForResource 
+              - bedrock:AllowVendedLogDeliveryForResource
               - bedrock:DeleteDataSource
               - bedrock:DeleteKnowledgeBase
               - bedrock:DeleteKnowledgeBaseDocuments
@@ -686,18 +712,18 @@ Resources:
               - bedrock:UpdateDataSource
               - bedrock:UpdateKnowledgeBase
             Resource: '*'
-      Roles: 
+      Roles:
         - Ref: 'LambdaExecutionRole'
 
-  LambdaMSKAccessPolicy: 
+  LambdaMSKAccessPolicy:
     Type: AWS::IAM::Policy
-    Properties: 
+    Properties:
       PolicyName: !Sub '${AWS::StackName}SageMakerMSKAccessPolicy'
-      PolicyDocument: 
+      PolicyDocument:
         Version: "2012-10-17"
-        Statement: 
+        Statement:
           - Effect: "Allow"
-            Action: 
+            Action:
               - kafka:DescribeClusterV2
               - kafka:GetBootstrapBrokers
               - kafka-cluster:Connect
@@ -708,18 +734,18 @@ Resources:
               - kafka-cluster:DescribeClusterDynamicConfiguration
               - kafka-cluster:AlterGroup
             Resource: !Sub  'arn:aws:kafka:${AWS::Region}:${AWS::AccountId}:*'
-      Roles: 
+      Roles:
         - Ref: "LambdaExecutionRole"
 
-  LambdaCloudWatchMetricsAccessPolicy: 
+  LambdaCloudWatchMetricsAccessPolicy:
     Type: AWS::IAM::Policy
-    Properties: 
+    Properties:
       PolicyName: !Sub '${AWS::StackName}LambdaCloudWatchMetricsAccessPolicy'
-      PolicyDocument: 
+      PolicyDocument:
         Version: "2012-10-17"
-        Statement: 
+        Statement:
           - Effect: "Allow"
-            Action: 
+            Action:
               - cloudwatch:DeleteAlarms
               - cloudwatch:DescribeAlarms
               - cloudwatch:GetMetricData
@@ -728,18 +754,18 @@ Resources:
               - cloudwatch:PutMetricAlarm
               - cloudwatch:PutMetricData
             Resource: '*'
-      Roles: 
+      Roles:
         - Ref: "LambdaExecutionRole"
 
-  LambdaCloudWatchLogsAccessPolicy: 
+  LambdaCloudWatchLogsAccessPolicy:
     Type: AWS::IAM::Policy
-    Properties: 
+    Properties:
       PolicyName: !Sub '${AWS::StackName}LambdaCloudWatchLogsAccessPolicy'
-      PolicyDocument: 
+      PolicyDocument:
         Version: "2012-10-17"
-        Statement: 
+        Statement:
           - Effect: "Allow"
-            Action: 
+            Action:
               - logs:CreateLogGroup
               - logs:CreateLogStream
               - logs:DescribeLogGroups
@@ -754,18 +780,18 @@ Resources:
               - logs:PutResourcePolicy
               - logs:UpdateLogDelivery
             Resource: 'arn:aws:logs:*:*:*'
-      Roles: 
+      Roles:
         - Ref: "LambdaExecutionRole"
 
-  LambdaENIAccessPolicy: 
+  LambdaENIAccessPolicy:
     Type: AWS::IAM::Policy
-    Properties: 
+    Properties:
       PolicyName: !Sub '${AWS::StackName}LambdaENIAccessPolicy'
-      PolicyDocument: 
+      PolicyDocument:
         Version: "2012-10-17"
-        Statement: 
+        Statement:
           - Effect: "Allow"
-            Action: 
+            Action:
               - ec2:DescribeNetworkInterfaces
               - ec2:CreateNetworkInterface
               - ec2:DeleteNetworkInterface
@@ -775,7 +801,7 @@ Resources:
               - ec2:DescribeSubnets
               - ec2:DescribeVpcs
             Resource: '*'
-      Roles: 
+      Roles:
         - Ref: "LambdaExecutionRole"
 
 # Lambda Function
@@ -800,9 +826,9 @@ Resources:
         - Key: 'Name'
           Value: !Join [ "", [ !Ref "AWS::StackName","KafkaConsumerLambdaFunction" ] ]
       VpcConfig:
-        SecurityGroupIds: 
+        SecurityGroupIds:
           - Ref: 'LambdaSecurityGroup'
-        SubnetIds: 
+        SubnetIds:
           - Ref: 'PrivateSubnet1'
           - Ref: 'PrivateSubnet2'
       Code:
@@ -825,7 +851,7 @@ Resources:
             import boto3
             import botocore
             from botocore.exceptions import ClientError
-            
+
             bedrock_agent_client = boto3.client('bedrock-agent')
 
             def lambda_handler(event, context):
@@ -896,11 +922,11 @@ Resources:
             def decode_payload(event_data):
                 print('Received event', event_data)
                 agg_data_bytes = base64.b64decode(event_data)
-                decoded_data = agg_data_bytes.decode(encoding="utf-8") 
+                decoded_data = agg_data_bytes.decode(encoding="utf-8")
                 event_payload = json.loads(decoded_data)
                 print('Decoded event', event_payload)
                 logging.info(f'Decoded data from kafka topic: {event_payload}')
-                return event_payload    
+                return event_payload
           - Region: !Ref AWS::Region
 
 # MSK Cluster
@@ -925,7 +951,7 @@ Resources:
             VolumeSize: 5
       ClusterName: !Sub '${AWS::StackName}MSKCluster'
       LoggingInfo:
-        BrokerLogs: 
+        BrokerLogs:
           CloudWatchLogs:
             Enabled: true
             LogGroup: !Ref MSKLogGroup
@@ -934,7 +960,8 @@ Resources:
           ClientBroker: TLS_PLAINTEXT
           InCluster: false
       EnhancedMonitoring: DEFAULT
-      KafkaVersion: 2.8.0
+      # Kafka 3.8.x is the AWS recommended version as documented in Supported Apache Kafka versions(https://docs.aws.amazon.com/msk/latest/developerguide/supported-kafka-versions.html).
+      KafkaVersion: 3.8.x
       NumberOfBrokerNodes: 2
       ClientAuthentication:
         Unauthenticated:
@@ -977,7 +1004,7 @@ Resources:
           DefaultEbsStorageSettings:
             DefaultEbsVolumeSizeInGb: 5
             MaximumEbsVolumeSizeInGb: 50
-      SubnetIds: 
+      SubnetIds:
         - !Ref PrivateSubnet1
         - !Ref PrivateSubnet2
       VpcId: !Ref 'VPC'
@@ -993,3 +1020,41 @@ Resources:
         DefaultLandingUri: 'studio::'
         ExecutionRole: !GetAtt SageMakerExecutionRole.Arn
         SecurityGroups: [!Ref SageMakerSecurityGroup]
+
+# Outputs
+Outputs:
+  StackName:
+    Description: CloudFormation Stack Name
+    Value: !Ref AWS::StackName
+    Export:
+      Name: !Sub '${AWS::StackName}-StackName'
+
+  KnowledgeBaseName:
+    Description: Name for the Bedrock Knowledge Base (to be created manually)
+    Value: !Ref KnowledgeBaseName
+    Export:
+      Name: !Sub '${AWS::StackName}-KnowledgeBaseName'
+
+  DataSourceName:
+    Description: Name for the Custom Data Source (to be created manually)
+    Value: !Ref DataSourceName
+    Export:
+      Name: !Sub '${AWS::StackName}-DataSourceName'
+
+  MSKClusterArn:
+    Description: ARN of the MSK Cluster
+    Value: !Ref MSKCluster
+    Export:
+      Name: !Sub '${AWS::StackName}-MSKClusterArn'
+
+  LambdaFunctionName:
+    Description: Name of the Kafka Consumer Lambda Function
+    Value: !Ref KafkaConsumerLambdaFunction
+    Export:
+      Name: !Sub '${AWS::StackName}-LambdaFunctionName'
+
+  SageMakerExecutionRoleArn:
+    Description: ARN of the SageMaker Execution Role
+    Value: !GetAtt SageMakerExecutionRole.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-SageMakerExecutionRoleArn'
