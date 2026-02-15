@@ -3,6 +3,22 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Template to create required resources to showcase how streaming data can be directly ingested into Amazon Bedrock Knowledge Base'
 
+# Parameters
+Parameters:
+  KnowledgeBaseName:
+    Type: String
+    Default: BedrockStreamIngestKnowledgeBase
+    Description: Name for the Bedrock Knowledge Base to be created manually
+    MinLength: 1
+    MaxLength: 100
+
+  DataSourceName:
+    Type: String
+    Default: BedrockStreamIngestKBCustomDS
+    Description: Name for the Custom Data Source to be created manually
+    MinLength: 1
+    MaxLength: 100
+
 # Mappings
 Mappings:
   SubnetConfig:
@@ -520,7 +536,11 @@ Resources:
             Action: 
               - kafka:DescribeClusterV2
               - kafka:GetBootstrapBrokers
+              - kafka:CreateTopic
+              - kafka:ListTopics
+              - kafka:DescribeTopic
               - kafka-cluster:Connect
+              - kafka-cluster:CreateTopic
               - kafka-cluster:AlterCluster
               - kafka-cluster:DescribeCluster
               - kafka-cluster:DescribeTopic
@@ -542,6 +562,7 @@ Resources:
           - Effect: "Allow"
             Action: 
               - cloudformation:DescribeStackResource
+              - cloudformation:DescribeStacks
             Resource: !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:*'
       Roles: 
         - Ref: "SageMakerExecutionRole"
@@ -934,7 +955,7 @@ Resources:
           ClientBroker: TLS_PLAINTEXT
           InCluster: false
       EnhancedMonitoring: DEFAULT
-      KafkaVersion: 2.8.0
+      KafkaVersion: 3.8.x
       NumberOfBrokerNodes: 2
       ClientAuthentication:
         Unauthenticated:
@@ -993,3 +1014,17 @@ Resources:
         DefaultLandingUri: 'studio::'
         ExecutionRole: !GetAtt SageMakerExecutionRole.Arn
         SecurityGroups: [!Ref SageMakerSecurityGroup]
+
+# Outputs
+Outputs:
+  KnowledgeBaseName:
+    Description: Name for the Bedrock Knowledge Base (to be created manually)
+    Value: !Ref KnowledgeBaseName
+    Export:
+      Name: !Sub '${AWS::StackName}-KnowledgeBaseName'
+
+  DataSourceName:
+    Description: Name for the Custom Data Source (to be created manually)
+    Value: !Ref DataSourceName
+    Export:
+      Name: !Sub '${AWS::StackName}-DataSourceName'
