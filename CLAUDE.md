@@ -15,7 +15,7 @@ Sample project demonstrating stream ingestion from Apache Kafka (Amazon MSK) to 
 
 - `templates/` - CloudFormation template for infrastructure provisioning
 - `notebooks/` - Jupyter notebooks for setup, testing, and cleanup
-- `data/` - Test data files (e.g., TestData.csv for stream ingestion testing)
+- `notebooks/TestData.csv` - Test data for stream ingestion (CSV with ticker and price columns)
 
 ## Architecture Flow
 
@@ -88,7 +88,7 @@ aws cloudformation wait stack-create-complete --stack-name BedrockStreamIngest
 Run `notebooks/2.StreamIngest.ipynb`:
 
 - Installs `confluent-kafka` Python library
-- Reads test data from `data/TestData.csv` (CSV with `ticker` and `price` columns)
+- Reads test data from `notebooks/TestData.csv` (same directory as notebook; CSV with `ticker` and `price` columns)
 - Publishes messages to Kafka topic using confluent-kafka Producer
 - Lambda automatically consumes and ingests to Bedrock KB
 
