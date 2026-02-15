@@ -1020,11 +1020,7 @@ Outputs:
   KnowledgeBaseName:
     Description: Name for the Bedrock Knowledge Base (to be created manually)
     Value: !Ref KnowledgeBaseName
-    Export:
-      Name: !Sub '${AWS::StackName}-KnowledgeBaseName'
 
   DataSourceName:
     Description: Name for the Custom Data Source (to be created manually)
     Value: !Ref DataSourceName
-    Export:
-      Name: !Sub '${AWS::StackName}-DataSourceName'
