@@ -1026,35 +1026,23 @@ Outputs:
   StackName:
     Description: CloudFormation Stack Name
     Value: !Ref AWS::StackName
-    Export:
-      Name: !Sub '${AWS::StackName}-StackName'
 
   KnowledgeBaseName:
     Description: Name for the Bedrock Knowledge Base (to be created manually)
     Value: !Ref KnowledgeBaseName
-    Export:
-      Name: !Sub '${AWS::StackName}-KnowledgeBaseName'
 
   DataSourceName:
     Description: Name for the Custom Data Source (to be created manually)
     Value: !Ref DataSourceName
-    Export:
-      Name: !Sub '${AWS::StackName}-DataSourceName'
 
   MSKClusterArn:
     Description: ARN of the MSK Cluster
     Value: !Ref MSKCluster
-    Export:
-      Name: !Sub '${AWS::StackName}-MSKClusterArn'
 
   LambdaFunctionName:
     Description: Name of the Kafka Consumer Lambda Function
     Value: !Ref KafkaConsumerLambdaFunction
-    Export:
-      Name: !Sub '${AWS::StackName}-LambdaFunctionName'
 
   SageMakerExecutionRoleArn:
     Description: ARN of the SageMaker Execution Role
     Value: !GetAtt SageMakerExecutionRole.Arn
-    Export:
-      Name: !Sub '${AWS::StackName}-SageMakerExecutionRoleArn'
