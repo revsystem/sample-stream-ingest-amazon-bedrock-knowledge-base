@@ -19,6 +19,11 @@ Parameters:
     MinLength: 1
     MaxLength: 100
 
+  Boto3LayerArn:
+    Type: String
+    Description: ARN of the boto3 Lambda layer (boto3 >= 1.42.46). Create with scripts/build-boto3-layer.sh and aws lambda publish-layer-version --zip-file fileb://...
+    MinLength: 1
+
 # Mappings
 Mappings:
   SubnetConfig:
@@ -568,6 +573,7 @@ Resources:
           - Effect: "Allow"
             Action:
               - cloudformation:DescribeStackResource
+              - cloudformation:DescribeStacks
             Resource: !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:*'
       Roles:
         - Ref: "SageMakerExecutionRole"
@@ -817,11 +823,13 @@ Resources:
     Properties:
       FunctionName: !Sub '${AWS::StackName}KafkaConsumerLambdaFunction'
       Description: 'Kafka Consumer Lambda Function'
-      ReservedConcurrentExecutions: 50
+      ReservedConcurrentExecutions: 1
       Handler: index.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Timeout: 900
       Runtime: python3.13
+      Layers:
+        - !Ref Boto3LayerArn
       Tags:
         - Key: 'Name'
           Value: !Join [ "", [ !Ref "AWS::StackName","KafkaConsumerLambdaFunction" ] ]
@@ -840,13 +848,7 @@ Resources:
             import logging
             import time
             import uuid
-            import sys
             from datetime import datetime
-            from pip._internal import main
-
-            main(['install', '-I', '-q', 'boto3', '--target', '/tmp/', '--no-cache-dir', '--disable-pip-version-check'])
-            main(['install', '-I', '-q', 'botocore', '--target', '/tmp/', '--no-cache-dir', '--disable-pip-version-check'])
-            sys.path.insert(0,'/tmp/')
 
             import boto3
             import botocore

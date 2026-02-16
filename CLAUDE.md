@@ -44,13 +44,21 @@ Default Kafka topic: `streamtopic`
 
 ### Initial Setup
 
-1. Deploy CloudFormation stack:
+1. Create the boto3 Lambda layer (no S3). Run the build script and note the printed `Boto3LayerArn` for the next step:
+
+```bash
+./scripts/build-boto3-layer.sh
+# Output includes: Boto3LayerArn for CloudFormation parameter: arn:aws:lambda:REGION:ACCOUNT:layer:boto3-layer:VERSION
+```
+
+2. Deploy CloudFormation stack (pass the layer ARN from step 1):
 
 ```bash
 # With default Knowledge Base and Data Source names
 aws cloudformation create-stack \
   --stack-name BedrockStreamIngest \
   --template-body file://templates/bedrock-kb-stream-ingest.yml \
+  --parameters ParameterKey=Boto3LayerArn,ParameterValue=arn:aws:lambda:REGION:ACCOUNT:layer:boto3-layer:VERSION \
   --capabilities CAPABILITY_NAMED_IAM
 
 # Or with custom names
@@ -58,22 +66,49 @@ aws cloudformation create-stack \
   --stack-name BedrockStreamIngest \
   --template-body file://templates/bedrock-kb-stream-ingest.yml \
   --parameters \
-    ParameterKey=KnowledgeBaseName,ParameterValue=MyCustomKB \
-    ParameterKey=DataSourceName,ParameterValue=MyCustomDS \
+    ParameterKey=Boto3LayerArn,ParameterValue=arn:aws:lambda:REGION:ACCOUNT:layer:boto3-layer:VERSION \
+    ParameterKey=KnowledgeBaseName,ParameterValue=BedrockStreamIngestKnowledgeBase \
+    ParameterKey=DataSourceName,ParameterValue=BedrockStreamIngestKBCustomDS \
   --capabilities CAPABILITY_NAMED_IAM
 ```
 
-2. Wait for stack creation (20-30 minutes for MSK cluster):
+3. Wait for stack creation (20-30 minutes for MSK cluster):
 
 ```bash
 aws cloudformation wait stack-create-complete --stack-name BedrockStreamIngest
 ```
 
-3. Access SageMaker Studio from AWS Console and open `notebooks/1.Setup.ipynb`
+**Updating the stack** (e.g. to change the boto3 layer or other parameters):
 
-4. Run all cells in `1.Setup.ipynb` sequentially:
+```bash
+# If you updated the boto3 layer, run the build script and use the new ARN:
+./scripts/build-boto3-layer.sh
 
-   - Checks and upgrades boto3/botocore to version >= 1.42.46 (required for MSK Topic Management API)
+# Update the stack with the new layer ARN (replace with the ARN from the script output)
+aws cloudformation update-stack \
+  --stack-name BedrockStreamIngest \
+  --template-body file://templates/bedrock-kb-stream-ingest.yml \
+  --parameters ParameterKey=Boto3LayerArn,ParameterValue=arn:aws:lambda:REGION:ACCOUNT:layer:boto3-layer:VERSION \
+  --capabilities CAPABILITY_NAMED_IAM
+
+# Or with all parameters (use existing values for parameters you are not changing)
+aws cloudformation update-stack \
+  --stack-name BedrockStreamIngest \
+  --template-body file://templates/bedrock-kb-stream-ingest.yml \
+  --parameters \
+    ParameterKey=Boto3LayerArn,ParameterValue=arn:aws:lambda:REGION:ACCOUNT:layer:boto3-layer:VERSION \
+    ParameterKey=KnowledgeBaseName,ParameterValue=BedrockStreamIngestKnowledgeBase \
+    ParameterKey=DataSourceName,ParameterValue=BedrockStreamIngestKBCustomDS \
+  --capabilities CAPABILITY_NAMED_IAM
+
+aws cloudformation wait stack-update-complete --stack-name BedrockStreamIngest
+```
+
+4. Access SageMaker Studio from AWS Console and open `notebooks/1.Setup.ipynb`
+
+5. Run all cells in `1.Setup.ipynb` sequentially:
+
+   - Checks and upgrades boto3/botocore to version >= 1.42.46 in the SageMaker notebook environment (required for MSK Topic Management API; Lambda uses a layer for boto3)
    - Retrieves MSK cluster ARN and bootstrap broker string
    - Creates Kafka topic using MSK CreateTopic API (no Kafka client installation required)
    - Verifies created topics using MSK ListTopics API
@@ -116,12 +151,12 @@ These APIs are available for MSK clusters running Kafka 3.6+ and require appropr
 
 ### Lambda Function Code
 
-Embedded in CloudFormation template (lines 808-904):
+Embedded in CloudFormation template:
 
 - Runtime: Python 3.13
 - Timeout: 900 seconds
-- Reserved concurrency: 50
-- Installs boto3/botocore at runtime to `/tmp/`
+- Reserved concurrency: 1
+- Uses a Lambda layer for boto3 >= 1.42.46 (no runtime pip install; create with `scripts/build-boto3-layer.sh`)
 - Decodes base64-encoded Kafka messages
 - Constructs text payload: "At {timestamp} the price of {ticker} is {price}."
 - Generates UUID for each document
@@ -180,6 +215,37 @@ Two main execution roles:
 - MSK and Lambda deployed in private subnets
 - NAT Gateway for outbound internet access
 
+## Cost Optimization
+
+- **Lambda reserved concurrency**: Set to 1 for this sample (1 topic, 1 partition). See `docs/cost-analysis-lambda-msk.md` for analysis.
+- **Lambda boto3**: Provided via a Lambda layer (boto3 >= 1.42.46); no runtime pip install, which shortens cold start time.
+- **MSK**: Provisioned (kafka.t3.small × 2) is appropriate for this sample. Delete the stack when not in use to avoid idle broker costs. See `docs/cost-analysis-lambda-msk.md` for MSK Provisioned vs Serverless pricing comparison.
+
+## Notebook Formatting Rules
+
+Jupyter notebook (`.ipynb`) files must match the upstream (aws-samples) format exactly:
+
+- **JSON indentation**: 1 space (this is the SageMaker Studio default). Do NOT use 2-space or 4-space indentation for the notebook JSON structure.
+- **Trailing whitespace in source lines**: Preserve as-is. Do NOT strip trailing spaces from existing code lines — upstream has intentional trailing whitespace in some cells.
+- **Python code indentation inside cells**: 4 spaces (standard Python).
+- **Metadata**: Keep `metadata`, `nbformat`, `nbformat_minor` identical to upstream for unchanged notebooks.
+
+To reformat notebooks to 1-space JSON indentation (e.g., after an editor changes the format):
+
+```bash
+python3 -c "
+import json
+for path in ['notebooks/1.Setup.ipynb', 'notebooks/2.StreamIngest.ipynb', 'notebooks/3.Cleanup.ipynb']:
+    with open(path) as f:
+        data = json.load(f)
+    with open(path, 'w') as f:
+        json.dump(data, f, indent=1, ensure_ascii=False)
+        f.write('\n')
+"
+```
+
+**Important**: After reformatting, verify with `git diff` that only intended changes appear. If upstream trailing whitespace was lost, restore it from `aws-samples/main`.
+
 ## Troubleshooting
 
 - If Lambda cannot connect to MSK: Check security group rules and event source mapping status
@@ -196,3 +262,5 @@ Two main execution roles:
 - [Amazon Bedrock IngestKnowledgeBaseDocuments API](https://docs.aws.amazon.com/bedrock/latest/APIReference/API_agent_IngestKnowledgeBaseDocuments.html) - API reference for stream ingestion
 - [Amazon MSK Kafka Topics Public APIs](https://aws.amazon.com/jp/about-aws/whats-new/2026/02/amazon-msk-kafka-topics-public-apis/) - Announcement of CreateTopic, UpdateTopic, and DeleteTopic APIs
 - [MSK CreateTopic API - Boto3 Documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/kafka/client/create_topic.html) - API reference for programmatic topic creation
+- [Lambda reserved concurrency](https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html) - Configuring reserved concurrency for a function
+- [What is MSK Serverless?](https://docs.aws.amazon.com/msk/latest/developerguide/serverless.html) - MSK Serverless overview and when to use

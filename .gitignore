@@ -1,1 +1,5 @@
 .DS_Store
+.vscode/
+.cursor/
+.claude/
+build/
