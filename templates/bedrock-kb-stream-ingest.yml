@@ -547,6 +547,7 @@ Resources:
               - kafka:UpdateTopic
               - kafka:DeleteTopic
               - kafka-cluster:Connect
+              - kafka-cluster:CreateTopic
               - kafka-cluster:AlterCluster
               - kafka-cluster:DescribeCluster
               - kafka-cluster:DescribeTopic
