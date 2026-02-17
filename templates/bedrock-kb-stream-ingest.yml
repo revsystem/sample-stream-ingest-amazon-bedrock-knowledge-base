@@ -821,7 +821,7 @@ Resources:
       - LambdaBedrockAccessPolicy
     Properties:
       FunctionName: !Sub "${AWS::StackName}KafkaConsumerLambdaFunction"
-      Description: "Kafka Consumer Lambda Function - v2 exponential backoff, dynamic topic, tz-aware datetime"
+      Description: "Kafka Consumer Lambda Function - v3 batch processing with rate limiting"
       ReservedConcurrentExecutions: 1
       Handler: index.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
@@ -858,6 +858,8 @@ Resources:
             MAX_RETRIES = 5
             BASE_DELAY = 1.0
             MAX_DELAY = 30.0
+            BATCH_SIZE = 10
+            BATCH_DELAY = float(os.environ.get('BATCH_DELAY', '2.0'))
 
             def ingest_with_backoff(client, kb_id, ds_id, documents):
                 for attempt in range(MAX_RETRIES):
@@ -880,66 +882,58 @@ Resources:
             def lambda_handler(event, context):
                 print(f'boto3 version: {boto3.__version__}')
                 print(f'botocore version: {botocore.__version__}')
-                print('## ENVIRONMENT VARIABLES')
-                print(os.environ['AWS_LAMBDA_LOG_GROUP_NAME'])
-                print(os.environ['AWS_LAMBDA_LOG_STREAM_NAME'])
                 kb_id = os.environ['KBID']
-                print(kb_id)
                 ds_id = os.environ['DSID']
-                print(ds_id)
-                print('## EVENT')
-                print(event)
+                print(f'KBID: {kb_id}, DSID: {ds_id}, BATCH_DELAY: {BATCH_DELAY}')
 
+                all_documents = []
                 for topic_partition, records in event['records'].items():
                     print(f'## PROCESSING: {topic_partition}')
                     for rec in records:
-                        print('## RECORD')
                         event_payload = decode_payload(rec['value'])
-                        print('Decoded event main', event_payload)
                         ticker = event_payload['ticker']
                         price = event_payload['price']
                         timestamp = event_payload['timestamp']
                         myuuid = uuid.uuid4()
-                        print('## RECORD UUID', str(myuuid))
-                        print('## TICKER: ', ticker)
-                        print('## PRICE: ', price)
                         payload_ts = datetime.fromtimestamp(timestamp, tz=timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
-                        print('## TIMESTAMP: ', payload_ts)
                         payload_string = "At " + payload_ts + " the price of " + ticker + " is " + str(price) + "."
-                        print('## PAYLOAD STRING: ', payload_string)
-                        documents = [
-                            {
-                                'content': {
-                                    'custom' : {
-                                        'customDocumentIdentifier': {
-                                            'id' : str(myuuid)
-                                        },
-                                        'inlineContent' : {
-                                            'textContent' : {
-                                                'data' : payload_string
-                                            },
-                                            'type' : 'TEXT'
-                                        },
-                                        'sourceType' : 'IN_LINE'
+                        print(f'## DOC {myuuid}: {payload_string}')
+                        all_documents.append({
+                            'content': {
+                                'custom': {
+                                    'customDocumentIdentifier': {
+                                        'id': str(myuuid)
                                     },
-                                    'dataSourceType' : 'CUSTOM'
-                                }
+                                    'inlineContent': {
+                                        'textContent': {
+                                            'data': payload_string
+                                        },
+                                        'type': 'TEXT'
+                                    },
+                                    'sourceType': 'IN_LINE'
+                                },
+                                'dataSourceType': 'CUSTOM'
                             }
-                        ]
-                        response = ingest_with_backoff(bedrock_agent_client, kb_id, ds_id, documents)
-                        print('## INGEST KNOWLEDGE BASE DOCUMENTS RESPONSE: ', response)
+                        })
 
-                return {
-                    'statusCode': 200,
-                    'body': json.dumps('Success from Lambda!')
-                }
+                print(f'## TOTAL DOCUMENTS: {len(all_documents)}')
+
+                for i in range(0, len(all_documents), BATCH_SIZE):
+                    batch = all_documents[i:i + BATCH_SIZE]
+                    batch_num = i // BATCH_SIZE + 1
+                    total_batches = (len(all_documents) + BATCH_SIZE - 1) // BATCH_SIZE
+                    print(f'## INGESTING BATCH {batch_num}/{total_batches} ({len(batch)} docs)')
+                    response = ingest_with_backoff(bedrock_agent_client, kb_id, ds_id, batch)
+                    print(f'## BATCH RESPONSE: {response}')
+                    if i + BATCH_SIZE < len(all_documents):
+                        time.sleep(BATCH_DELAY)
+
+                return {'statusCode': 200, 'body': json.dumps('Success from Lambda!')}
 
             def decode_payload(event_data):
-                print('Received event', event_data)
                 agg_data_bytes = base64.b64decode(event_data)
                 decoded_data = agg_data_bytes.decode(encoding="utf-8")
                 event_payload = json.loads(decoded_data)
-                print('Decoded event', event_payload)
                 return event_payload
           - Region: !Ref AWS::Region
 
