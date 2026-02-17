@@ -429,19 +429,19 @@ aws lambda update-function-configuration \
 
 ### Phase 4: コード検証（ローカル）
 
-- [ ] 4-1. 変更後の ZipFile コードサイズが 4,096 バイト以内であることを計測
-- [ ] 4-2. サイズ超過の場合: `decode_payload` 内の print 文削減、または `print(f'## EVENT records: {len(event["records"])}')` のような軽量ログに切り替えて再計測
-- [ ] 4-3. `git diff` で変更箇所が意図どおりであることを確認
-- [ ] 4-4. セクション 6.3「変更後の Lambda 関数コード（全体像）」と差分を突き合わせ、漏れがないことを確認
-- [ ] 4-5. Python インデントが YAML `|` ブロック内で正しいことを目視確認（12 スペースの YAML インデント + 12 スペースの Python インデント）
+- [x] 4-1. 変更後の ZipFile コードサイズが 4,096 バイト以内であることを計測 → 3,562 バイト（残り 534 バイト）
+- [x] 4-2. サイズ超過の場合: `decode_payload` 内の print 文削減、または `print(f'## EVENT records: {len(event["records"])}')` のような軽量ログに切り替えて再計測 → スキップ（サイズ超過なし）
+- [x] 4-3. `git diff` で変更箇所が意図どおりであることを確認
+- [x] 4-4. セクション 6.3「変更後の Lambda 関数コード（全体像）」と差分を突き合わせ、漏れがないことを確認 → 完全一致
+- [x] 4-5. Python インデントが YAML `|` ブロック内で正しいことを目視確認（12 スペースの YAML インデント + 12 スペースの Python インデント）
 
 ### Phase 5: ドキュメント更新
 
-- [ ] 5-1. `CLAUDE.md` の「Lambda Function Code」セクション（L156-L168）を更新:
-  - [ ] 5-1a. `Calls ingest_knowledge_base_documents()` の記述にバッチ処理の説明を追加（10 ドキュメント/API コール）
-  - [ ] 5-1b. バッチ間ディレイの説明を追加（`BATCH_DELAY` 環境変数、デフォルト 2.0 秒）
-  - [ ] 5-1c. IngestKnowledgeBaseDocuments API の制約を記載（10 ドキュメント/リクエスト、5 RPS）
-- [ ] 5-2. `CLAUDE.md` の「Required Environment Variables (Lambda)」セクション（L170-L175）に `BATCH_DELAY` を追加:
+- [x] 5-1. `CLAUDE.md` の「Lambda Function Code」セクション（L156-L168）を更新:
+  - [x] 5-1a. `Calls ingest_knowledge_base_documents()` の記述にバッチ処理の説明を追加（10 ドキュメント/API コール）
+  - [x] 5-1b. バッチ間ディレイの説明を追加（`BATCH_DELAY` 環境変数、デフォルト 2.0 秒）
+  - [x] 5-1c. IngestKnowledgeBaseDocuments API の制約を記載（10 ドキュメント/リクエスト、5 RPS）
+- [x] 5-2. `CLAUDE.md` の「Required Environment Variables (Lambda)」セクション（L170-L175）に `BATCH_DELAY` を追加:
   - `BATCH_DELAY`（optional）: バッチ間ディレイ秒数。デフォルト 2.0。環境変数で調整可能
 
 ### Phase 6: デプロイと動作検証
