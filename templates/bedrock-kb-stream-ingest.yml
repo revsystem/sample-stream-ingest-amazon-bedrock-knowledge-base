@@ -845,7 +845,6 @@ Resources:
             import os
             import json
             import base64
-            import logging
             import random
             import time
             import uuid
@@ -853,7 +852,6 @@ Resources:
 
             import boto3
             import botocore
-            from botocore.exceptions import ClientError
 
             bedrock_agent_client = boto3.client('bedrock-agent', region_name='us-east-1')
 
@@ -942,7 +940,6 @@ Resources:
                 decoded_data = agg_data_bytes.decode(encoding="utf-8")
                 event_payload = json.loads(decoded_data)
                 print('Decoded event', event_payload)
-                logging.info(f'Decoded data from kafka topic: {event_payload}')
                 return event_payload
           - Region: !Ref AWS::Region
 
