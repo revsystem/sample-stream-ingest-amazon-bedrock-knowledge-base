@@ -177,17 +177,43 @@ RetentionInDays: 7 は検証環境に適切。これ以上短くするとトラ�
 
 本サンプルのペイロード例: "At 2026-02-15 10:30:00 the price of AAPL is 150.25." ≒ 約 20 トークン。仮に 100 レコード × 20 トークン = 2,000 トークンで、コストは $0.00004。**事実上ゼロ**。
 
-### 7.2 ベクトルストアの隠れコスト（要確認）
+### 7.2 ベクトルストア: Amazon S3 Vectors
 
-Bedrock Knowledge Base のベクトルストアの選択により、コストが大きく異なる。
+本プロジェクトでは Amazon S3 Vectors をベクトルストアとして採用する。S3 Vectors は 2025 年 12 月に GA となったベクトルストレージ機能で、Bedrock Knowledge Bases のベクトルストアとして正式にサポートされている。最小課金要件や OCU の概念がなく、完全従量課金のため、検証用途では他の選択肢と比較して桁違いに安価である。
+
+参照: [Amazon S3 Vectors](https://aws.amazon.com/s3/features/vectors/)、[Using S3 Vectors with Amazon Bedrock Knowledge Bases](https://docs.aws.amazon.com/AmazonS3/latest/userguide/s3-vectors-bedrock-kb.html)
+
+**S3 Vectors の主な単価（us-east-1）**
+
+| 課金項目 | 単価 |
+|----------|------|
+| ストレージ | $0.06/GB/月 |
+| PUT 操作 | $0.20/GB（論理 GB あたり） |
+| クエリ API 呼び出し | $2.50/100 万回 |
+| クエリ処理（10 万ベクトル以下） | $0.004/TB |
+
+参照: [Amazon S3 Pricing](https://aws.amazon.com/s3/pricing/)
+
+**本プロジェクトでのコスト概算**
+
+本サンプルは約 100 レコード × 1024 次元（Titan Text Embeddings V2）= 約 0.4 MB のベクトルデータを扱う。
+
+| 課金項目 | 計算 | 月額 |
+|----------|------|------|
+| ストレージ | 0.0004 GB × $0.06 | ≒ $0.00 |
+| PUT 操作 | 0.0004 GB × $0.20 | ≒ $0.00 |
+| クエリ | 検証用途で数百回程度 | ≒ $0.00 |
+| 合計 | | ≒ **$0**（$0.01 未満） |
+
+**他のベクトルストアとの比較（参考）**
 
 | ベクトルストア | 月額概算（最小構成） | 備考 |
 |--------------|-------------------|------|
-| **OpenSearch Serverless** | **$700+/月** | 最小 4 OCU（indexing 2 + search 2）× $0.24/OCU/h |
-| Aurora PostgreSQL（pgvector） | $30～60/月 | db.t4g.medium |
-| Pinecone（Starter） | 無料プラン有 | 外部 SaaS |
+| S3 Vectors（本プロジェクト採用） | ≒ **$0** | 完全従量課金、最小課金なし |
+| OpenSearch Serverless | **$700+/月** | 最小 4 OCU（indexing 2 + search 2）× $0.24/OCU/h |
+| Aurora PostgreSQL（pgvector） | $30～60/月 | db.t4g.medium のインスタンス常時稼働 |
 
-**OpenSearch Serverless を使用している場合、これがプロジェクト全体で最大のコスト要因となる。** 検証後すぐに Knowledge Base + ベクトルストアを削除するか、Aurora PostgreSQL（pgvector）への移行を検討すべき。
+S3 Vectors はサブセカンドのクエリレイテンシー（コールドクエリ 1 秒未満、ウォームクエリ 100ms 以下）であり、本サンプルの用途には十分である。低レイテンシー（10ms 以下）やハイブリッド検索が必要な本番ワークロードでは OpenSearch Serverless を検討する余地があるが、検証・サンプル用途では S3 Vectors が最もコスト効率が良い。
 
 ---
 
@@ -338,20 +364,20 @@ VPC Endpoint のコスト: 1 エンドポイント（bedrock-agent）× 2 AZ × 
 | Lambda | **$0** | 検証用途で呼び出し極小 |
 | Bedrock Embeddings API | **≒ $0** | 数千トークン程度 |
 | VPC 関連（サブネット、SG 等） | **$0** | 無料リソース |
-| ベクトルストア（OpenSearch Serverless の場合） | **$700+** | **要確認: 最大のコスト要因** |
-| **小計（ベクトルストア除く）** | **約 $71/月** | |
-| **小計（OpenSearch Serverless 含む）** | **約 $771/月** | |
+| ベクトルストア（S3 Vectors） | **≒ $0** | 完全従量課金、検証規模では $0.01 未満 |
+| **合計** | **約 $71/月** | ベクトルストアのコストは事実上ゼロ |
 
 ### 11.2 最適化施策の一覧
 
 | 優先度 | 施策 | 削減額/月 | 難易度 |
 |--------|------|----------|--------|
-| 1 | ベクトルストアを OpenSearch Serverless → Aurora pgvector に変更 | **-$640～$670** | 中（KB 再作成） |
-| 2 | 使用しない日はスタック削除（平日 8h × 20 日稼働） | **-$54** | 低（運用変更のみ） |
-| 3 | CloudShell + Producer Lambda 方式に移行（セクション 10 参照） | **-$24** | 中（テンプレート改修） |
-| 4 | AWS Budgets アラートの設定 | リスク軽減 | 低 |
-| 5 | JupyterLab アイドルシャットダウン設定 | **-$1～$5** | 低 |
-| 6 | コスト配分タグの追加 | 可視性向上 | 低 |
+| 1 | 使用しない日はスタック削除（平日 8h × 20 日稼働） | **-$54** | 低（運用変更のみ） |
+| 2 | CloudShell + Producer Lambda 方式に移行（セクション 10 参照） | **-$24** | 中（テンプレート改修） |
+| 3 | AWS Budgets アラートの設定 | リスク軽減 | 低 |
+| 4 | JupyterLab アイドルシャットダウン設定 | **-$1～$5** | 低 |
+| 5 | コスト配分タグの追加 | 可視性向上 | 低 |
+
+S3 Vectors を採用しているため、ベクトルストアのコストは事実上ゼロであり、コスト最適化の対象外である。主なコスト要因は MSK ブローカーと NAT Gateway の固定費であり、スタック削除運用が最も効果的な削減策となる。
 
 ### 11.3 最適化後の月額概算（平日 8h × 20 日の使用想定）
 
@@ -364,9 +390,8 @@ VPC Endpoint のコスト: 1 エンドポイント（bedrock-agent）× 2 AZ × 
 | CloudWatch Logs | $0 | $0 | $0 |
 | Lambda | $0 | $0 | $0 |
 | Bedrock API | ≒ $0 | ≒ $0 | $0 |
-| ベクトルストア（Aurora pgvector） | $700+（OSS の場合） | $30 | -$670 |
-| **合計（ベクトルストア除く）** | **$71** | **$16** | **-$55（78% 削減）** |
-| **合計（OSS → pgvector 移行含む）** | **$771** | **$46** | **-$725（94% 削減）** |
+| ベクトルストア（S3 Vectors） | ≒ $0 | ≒ $0 | $0 |
+| **合計** | **$71** | **$16** | **-$55（78% 削減）** |
 
 ### 11.4 現状の構成と今後の変更のまとめ
 
@@ -377,6 +402,6 @@ VPC Endpoint のコスト: 1 エンドポイント（bedrock-agent）× 2 AZ × 
 | MSK | プロビジョンド（kafka.t3.small × 2）のまま運用 | **使わない期間はスタック削除**で固定費を削減 |
 | NAT Gateway | VPC エンドポイント置換はコスト増のため現状維持 | CloudShell 方式ならVPC Endpoint 1 つに置換可能（-$18/月） |
 | SageMaker Studio | 本サンプルの MSK 接続に必要 | CloudShell 方式なら廃止可能（-$2/月）、維持する場合はアイドルシャットダウン設定を追加 |
-| ベクトルストア | 要確認（OpenSearch Serverless なら最大コスト要因） | Aurora pgvector への移行 or 使用後すぐに削除 |
+| ベクトルストア | S3 Vectors（≒ $0/月） | 検証規模では追加コストなし。本番スケールでも従量課金のため予測可能 |
 
-現状の構成で Lambda まわりはコスト・起動時間ともに最適化済み。**最大のコスト削減余地はベクトルストアの選択**であり、OpenSearch Serverless を使用中なら Aurora pgvector への移行を最優先で検討すべき。インフラ構成面では **CloudShell + Producer Lambda 方式**（セクション 10）により SageMaker Studio・NAT Gateway・Elastic IP を削除し月額 $24 の削減が見込める。それ以外のリソースはスタック削除運用で固定費を抑える方針を推奨する。
+現状の構成で Lambda まわりはコスト・起動時間ともに最適化済み。ベクトルストアに S3 Vectors を採用しているため、従来最大のコスト要因であったベクトルストアのコスト問題は解消されている。主なコスト要因は MSK ブローカー（$32/月）と NAT Gateway（$33/月）の固定費であり、スタック削除運用で固定費を抑える方針を推奨する。インフラ構成面では **CloudShell + Producer Lambda 方式**（セクション 10）により SageMaker Studio・NAT Gateway・Elastic IP を削除し月額 $24 の削減が見込める。

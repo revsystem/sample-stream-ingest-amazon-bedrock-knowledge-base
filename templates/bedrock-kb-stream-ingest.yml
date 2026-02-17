@@ -1,7 +1,7 @@
 # Amazon Bedrock Knowledge Base - Stream Ingest Data
 
-AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Template to create required resources to showcase how streaming data can be directly ingested into Amazon Bedrock Knowledge Base'
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Template to create required resources to showcase how streaming data can be directly ingested into Amazon Bedrock Knowledge Base"
 
 # Parameters
 Parameters:
@@ -28,33 +28,32 @@ Parameters:
 Mappings:
   SubnetConfig:
     VPC:
-      CIDR: '10.0.0.0/16'
+      CIDR: "10.0.0.0/16"
     PublicSubnet1:
-      CIDR: '10.0.0.0/20'
+      CIDR: "10.0.0.0/20"
     PublicSubnet2:
-      CIDR: '10.0.16.0/20'
+      CIDR: "10.0.16.0/20"
     PrivateSubnet1:
-      CIDR: '10.0.128.0/20'
+      CIDR: "10.0.128.0/20"
     PrivateSubnet2:
-      CIDR: '10.0.144.0/20'
+      CIDR: "10.0.144.0/20"
 
 # Resources
 Resources:
-
-# VPC
+  # VPC
 
   VPC:
     Type: AWS::EC2::VPC
     Properties:
-      CidrBlock: !FindInMap ['SubnetConfig', 'VPC', 'CIDR']
+      CidrBlock: !FindInMap ["SubnetConfig", "VPC", "CIDR"]
       EnableDnsHostnames: true
       EnableDnsSupport: true
       InstanceTenancy: default
       Tags:
-        - Key: 'Name'
-          Value: !Join [ "", [ !Ref "AWS::StackName","VPC" ] ]
+        - Key: "Name"
+          Value: !Join ["", [!Ref "AWS::StackName", "VPC"]]
 
-# Subnets
+  # Subnets
 
   PublicSubnet1:
     Type: AWS::EC2::Subnet
@@ -63,13 +62,13 @@ Resources:
       AvailabilityZone:
         Fn::Select:
           - 0
-          - Fn::GetAZs: {Ref: 'AWS::Region'}
-      VpcId: !Ref 'VPC'
-      CidrBlock: !FindInMap ['SubnetConfig', 'PublicSubnet1', 'CIDR']
+          - Fn::GetAZs: { Ref: "AWS::Region" }
+      VpcId: !Ref "VPC"
+      CidrBlock: !FindInMap ["SubnetConfig", "PublicSubnet1", "CIDR"]
       MapPublicIpOnLaunch: false
       Tags:
-        - Key: 'Name'
-          Value: !Join [ "", [ !Ref "AWS::StackName","PublicSubnet1" ] ]
+        - Key: "Name"
+          Value: !Join ["", [!Ref "AWS::StackName", "PublicSubnet1"]]
 
   PublicSubnet2:
     Type: AWS::EC2::Subnet
@@ -78,13 +77,13 @@ Resources:
       AvailabilityZone:
         Fn::Select:
           - 1
-          - Fn::GetAZs: {Ref: 'AWS::Region'}
-      VpcId: !Ref 'VPC'
-      CidrBlock: !FindInMap ['SubnetConfig', 'PublicSubnet2', 'CIDR']
+          - Fn::GetAZs: { Ref: "AWS::Region" }
+      VpcId: !Ref "VPC"
+      CidrBlock: !FindInMap ["SubnetConfig", "PublicSubnet2", "CIDR"]
       MapPublicIpOnLaunch: false
       Tags:
-        - Key: 'Name'
-          Value: !Join [ "", [ !Ref "AWS::StackName","PublicSubnet2" ] ]
+        - Key: "Name"
+          Value: !Join ["", [!Ref "AWS::StackName", "PublicSubnet2"]]
 
   PrivateSubnet1:
     Type: AWS::EC2::Subnet
@@ -92,13 +91,13 @@ Resources:
       AvailabilityZone:
         Fn::Select:
           - 0
-          - Fn::GetAZs: {Ref: 'AWS::Region'}
-      VpcId: !Ref 'VPC'
-      CidrBlock: !FindInMap ['SubnetConfig', 'PrivateSubnet1', 'CIDR']
+          - Fn::GetAZs: { Ref: "AWS::Region" }
+      VpcId: !Ref "VPC"
+      CidrBlock: !FindInMap ["SubnetConfig", "PrivateSubnet1", "CIDR"]
       MapPublicIpOnLaunch: false
       Tags:
-        - Key: 'Name'
-          Value: !Join [ "", [ !Ref "AWS::StackName","PrivateSubnet1" ] ]
+        - Key: "Name"
+          Value: !Join ["", [!Ref "AWS::StackName", "PrivateSubnet1"]]
 
   PrivateSubnet2:
     Type: AWS::EC2::Subnet
@@ -106,30 +105,30 @@ Resources:
       AvailabilityZone:
         Fn::Select:
           - 1
-          - Fn::GetAZs: {Ref: 'AWS::Region'}
-      VpcId: !Ref 'VPC'
-      CidrBlock: !FindInMap ['SubnetConfig', 'PrivateSubnet2', 'CIDR']
+          - Fn::GetAZs: { Ref: "AWS::Region" }
+      VpcId: !Ref "VPC"
+      CidrBlock: !FindInMap ["SubnetConfig", "PrivateSubnet2", "CIDR"]
       MapPublicIpOnLaunch: false
       Tags:
-        - Key: 'Name'
-          Value: !Join [ "", [ !Ref "AWS::StackName","PrivateSubnet2" ] ]
+        - Key: "Name"
+          Value: !Join ["", [!Ref "AWS::StackName", "PrivateSubnet2"]]
 
-# Internet Gateway
+  # Internet Gateway
 
   InternetGateway:
     Type: AWS::EC2::InternetGateway
     Properties:
       Tags:
         - Key: Name
-          Value: !Join [ "", [ !Ref "AWS::StackName","InternetGateway" ] ]
+          Value: !Join ["", [!Ref "AWS::StackName", "InternetGateway"]]
 
   InternetGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
-      VpcId: !Ref 'VPC'
-      InternetGatewayId: !Ref 'InternetGateway'
+      VpcId: !Ref "VPC"
+      InternetGatewayId: !Ref "InternetGateway"
 
-# Elastic IP
+  # Elastic IP
 
   ElasticIPAddress:
     Type: AWS::EC2::EIP
@@ -137,115 +136,115 @@ Resources:
       Domain: vpc
       Tags:
         - Key: Name
-          Value: !Join [ "", [ !Ref "AWS::StackName","ElasticIP" ] ]
+          Value: !Join ["", [!Ref "AWS::StackName", "ElasticIP"]]
 
-# NAT Gateway
+  # NAT Gateway
 
   NATGateway:
     Type: AWS::EC2::NatGateway
     Properties:
       AllocationId: !GetAtt ElasticIPAddress.AllocationId
-      SubnetId: !Ref 'PublicSubnet1'
+      SubnetId: !Ref "PublicSubnet1"
       Tags:
-        - Key: 'Name'
-          Value: !Join [ "", [ !Ref "AWS::StackName","NATGateway" ] ]
+        - Key: "Name"
+          Value: !Join ["", [!Ref "AWS::StackName", "NATGateway"]]
 
-# Public Routes
+  # Public Routes
 
   PublicRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
-      VpcId: !Ref 'VPC'
+      VpcId: !Ref "VPC"
       Tags:
-        - Key: 'Name'
-          Value: !Join [ "", [ !Ref "AWS::StackName","PublicRouteTable" ] ]
+        - Key: "Name"
+          Value: !Join ["", [!Ref "AWS::StackName", "PublicRouteTable"]]
 
   PublicRoute:
     Type: AWS::EC2::Route
     Properties:
-      RouteTableId: !Ref 'PublicRouteTable'
-      DestinationCidrBlock: '0.0.0.0/0'
-      GatewayId: !Ref 'InternetGateway'
+      RouteTableId: !Ref "PublicRouteTable"
+      DestinationCidrBlock: "0.0.0.0/0"
+      GatewayId: !Ref "InternetGateway"
 
   PublicSubnet1RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId: !Ref 'PublicSubnet1'
-      RouteTableId: !Ref 'PublicRouteTable'
+      SubnetId: !Ref "PublicSubnet1"
+      RouteTableId: !Ref "PublicRouteTable"
 
   PublicSubnet2RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId: !Ref 'PublicSubnet2'
-      RouteTableId: !Ref 'PublicRouteTable'
+      SubnetId: !Ref "PublicSubnet2"
+      RouteTableId: !Ref "PublicRouteTable"
 
-# Private Routes
+  # Private Routes
 
   PrivateRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
-      VpcId: !Ref 'VPC'
+      VpcId: !Ref "VPC"
       Tags:
-        - Key: 'Name'
-          Value: !Join [ "", [ !Ref "AWS::StackName","PrivateRouteTable" ] ]
+        - Key: "Name"
+          Value: !Join ["", [!Ref "AWS::StackName", "PrivateRouteTable"]]
 
   PrivateRoute:
     Type: AWS::EC2::Route
     Properties:
-      RouteTableId: !Ref 'PrivateRouteTable'
-      DestinationCidrBlock: '0.0.0.0/0'
-      GatewayId: !Ref 'NATGateway'
+      RouteTableId: !Ref "PrivateRouteTable"
+      DestinationCidrBlock: "0.0.0.0/0"
+      GatewayId: !Ref "NATGateway"
 
   PrivateSubnet1RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId: !Ref 'PrivateSubnet1'
-      RouteTableId: !Ref 'PrivateRouteTable'
+      SubnetId: !Ref "PrivateSubnet1"
+      RouteTableId: !Ref "PrivateRouteTable"
 
   PrivateSubnet2RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
-      SubnetId: !Ref 'PrivateSubnet2'
-      RouteTableId: !Ref 'PrivateRouteTable'
+      SubnetId: !Ref "PrivateSubnet2"
+      RouteTableId: !Ref "PrivateRouteTable"
 
-# Security Groups
+  # Security Groups
 
   MSKSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      VpcId: !Ref 'VPC'
-      GroupName: !Sub '${AWS::StackName}MSKSecurityGroup'
-      GroupDescription: 'MSK Security Group'
+      VpcId: !Ref "VPC"
+      GroupName: !Sub "${AWS::StackName}MSKSecurityGroup"
+      GroupDescription: "MSK Security Group"
       Tags:
-        - Key: 'Name'
-          Value: !Join [ "", [ !Ref "AWS::StackName","MSKSecurityGroup" ] ]
+        - Key: "Name"
+          Value: !Join ["", [!Ref "AWS::StackName", "MSKSecurityGroup"]]
 
   LambdaSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      VpcId: !Ref 'VPC'
-      GroupName: !Sub '${AWS::StackName}LambdaSecurityGroup'
-      GroupDescription: 'Lambda Security Group'
+      VpcId: !Ref "VPC"
+      GroupName: !Sub "${AWS::StackName}LambdaSecurityGroup"
+      GroupDescription: "Lambda Security Group"
       Tags:
-        - Key: 'Name'
-          Value: !Join [ "", [ !Ref "AWS::StackName","LambdaSecurityGroup" ] ]
+        - Key: "Name"
+          Value: !Join ["", [!Ref "AWS::StackName", "LambdaSecurityGroup"]]
 
   SageMakerSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      VpcId: !Ref 'VPC'
-      GroupName: !Sub '${AWS::StackName}SageMakerSecurityGroup'
-      GroupDescription: 'SageMaker Security Group'
+      VpcId: !Ref "VPC"
+      GroupName: !Sub "${AWS::StackName}SageMakerSecurityGroup"
+      GroupDescription: "SageMaker Security Group"
       Tags:
-        - Key: 'Name'
-          Value: !Join [ "", [ !Ref "AWS::StackName","SageMakerSecurityGroup" ] ]
+        - Key: "Name"
+          Value: !Join ["", [!Ref "AWS::StackName", "SageMakerSecurityGroup"]]
 
-# Security Group Ingress Rules
+  # Security Group Ingress Rules
 
   MSKSecurityGroupLambdaIngress:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
-      Description: 'Allow traffic from Lambda'
+      Description: "Allow traffic from Lambda"
       IpProtocol: -1
       SourceSecurityGroupId: !GetAtt LambdaSecurityGroup.GroupId
       GroupId: !Ref MSKSecurityGroup
@@ -253,7 +252,7 @@ Resources:
   MSKSecurityGroupSageMakerIngress:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
-      Description: 'Allow traffic from SageMaker'
+      Description: "Allow traffic from SageMaker"
       IpProtocol: -1
       SourceSecurityGroupId: !GetAtt SageMakerSecurityGroup.GroupId
       GroupId: !Ref MSKSecurityGroup
@@ -261,7 +260,7 @@ Resources:
   MSKSecurityGroupSelfIngress:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
-      Description: 'Allow traffic from within'
+      Description: "Allow traffic from within"
       IpProtocol: -1
       SourceSecurityGroupId: !GetAtt MSKSecurityGroup.GroupId
       GroupId: !Ref MSKSecurityGroup
@@ -269,7 +268,7 @@ Resources:
   LambdaSecurityGroupMSKIngress:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
-      Description: 'Allow traffic from MSK'
+      Description: "Allow traffic from MSK"
       IpProtocol: -1
       SourceSecurityGroupId: !GetAtt MSKSecurityGroup.GroupId
       GroupId: !Ref LambdaSecurityGroup
@@ -277,7 +276,7 @@ Resources:
   LambdaSecurityGroupSageMakerIngress:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
-      Description: 'Allow traffic from SageMaker'
+      Description: "Allow traffic from SageMaker"
       IpProtocol: -1
       SourceSecurityGroupId: !GetAtt SageMakerSecurityGroup.GroupId
       GroupId: !Ref LambdaSecurityGroup
@@ -285,7 +284,7 @@ Resources:
   LambdaSecurityGroupSelfIngress:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
-      Description: 'Allow traffic from within'
+      Description: "Allow traffic from within"
       IpProtocol: -1
       SourceSecurityGroupId: !GetAtt LambdaSecurityGroup.GroupId
       GroupId: !Ref LambdaSecurityGroup
@@ -293,7 +292,7 @@ Resources:
   SageMakerSecurityGroupLambdaIngress:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
-      Description: 'Allow traffic from Lambda'
+      Description: "Allow traffic from Lambda"
       IpProtocol: -1
       SourceSecurityGroupId: !GetAtt LambdaSecurityGroup.GroupId
       GroupId: !Ref SageMakerSecurityGroup
@@ -301,7 +300,7 @@ Resources:
   SageMakerSecurityGroupMSKIngress:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
-      Description: 'Allow traffic from MSK'
+      Description: "Allow traffic from MSK"
       IpProtocol: -1
       SourceSecurityGroupId: !GetAtt MSKSecurityGroup.GroupId
       GroupId: !Ref SageMakerSecurityGroup
@@ -309,33 +308,33 @@ Resources:
   SageMakerSecurityGroupSelfIngress:
     Type: AWS::EC2::SecurityGroupIngress
     Properties:
-      Description: 'Allow traffic from within'
+      Description: "Allow traffic from within"
       IpProtocol: -1
       SourceSecurityGroupId: !GetAtt SageMakerSecurityGroup.GroupId
       GroupId: !Ref SageMakerSecurityGroup
 
-# Security Group Egress Rules
+  # Security Group Egress Rules
 
   MSKSecurityGroupAllIPv4TrafficEgress:
     Type: AWS::EC2::SecurityGroupEgress
     Properties:
-      Description: 'Allow all ipv4 egress traffic'
+      Description: "Allow all ipv4 egress traffic"
       IpProtocol: -1
-      CidrIp: '0.0.0.0/0'
+      CidrIp: "0.0.0.0/0"
       GroupId: !Ref MSKSecurityGroup
 
   MSKSecurityGroupAllIPv6TrafficEgress:
     Type: AWS::EC2::SecurityGroupEgress
     Properties:
-      Description: 'Allow all ipv4 egress traffic'
+      Description: "Allow all ipv4 egress traffic"
       IpProtocol: -1
-      CidrIpv6: '::/0'
+      CidrIpv6: "::/0"
       GroupId: !Ref MSKSecurityGroup
 
   MSKSecurityGroupLambdaEgress:
     Type: AWS::EC2::SecurityGroupEgress
     Properties:
-      Description: 'Allow egress traffic to Lambda'
+      Description: "Allow egress traffic to Lambda"
       IpProtocol: -1
       DestinationSecurityGroupId: !GetAtt LambdaSecurityGroup.GroupId
       GroupId: !Ref MSKSecurityGroup
@@ -343,7 +342,7 @@ Resources:
   MSKSecurityGroupSageMakerEgress:
     Type: AWS::EC2::SecurityGroupEgress
     Properties:
-      Description: 'Allow egress traffic to SageMaker'
+      Description: "Allow egress traffic to SageMaker"
       IpProtocol: -1
       DestinationSecurityGroupId: !GetAtt SageMakerSecurityGroup.GroupId
       GroupId: !Ref MSKSecurityGroup
@@ -351,7 +350,7 @@ Resources:
   MSKSecurityGroupSelfEgress:
     Type: AWS::EC2::SecurityGroupEgress
     Properties:
-      Description: 'Allow egress traffic to within'
+      Description: "Allow egress traffic to within"
       IpProtocol: -1
       DestinationSecurityGroupId: !GetAtt MSKSecurityGroup.GroupId
       GroupId: !Ref MSKSecurityGroup
@@ -359,23 +358,23 @@ Resources:
   LambdaSecurityGroupAllIPv4TrafficEgress:
     Type: AWS::EC2::SecurityGroupEgress
     Properties:
-      Description: 'Allow all ipv4 egress traffic'
+      Description: "Allow all ipv4 egress traffic"
       IpProtocol: -1
-      CidrIp: '0.0.0.0/0'
+      CidrIp: "0.0.0.0/0"
       GroupId: !Ref LambdaSecurityGroup
 
   LambdaSecurityGroupAllIPv6TrafficEgress:
     Type: AWS::EC2::SecurityGroupEgress
     Properties:
-      Description: 'Allow all ipv4 egress traffic'
+      Description: "Allow all ipv4 egress traffic"
       IpProtocol: -1
-      CidrIpv6: '::/0'
+      CidrIpv6: "::/0"
       GroupId: !Ref LambdaSecurityGroup
 
   LambdaSecurityGroupMSKEgress:
     Type: AWS::EC2::SecurityGroupEgress
     Properties:
-      Description: 'Allow egress traffic to MSK'
+      Description: "Allow egress traffic to MSK"
       IpProtocol: -1
       DestinationSecurityGroupId: !GetAtt MSKSecurityGroup.GroupId
       GroupId: !Ref LambdaSecurityGroup
@@ -383,7 +382,7 @@ Resources:
   LambdaSecurityGroupSageMakerEgress:
     Type: AWS::EC2::SecurityGroupEgress
     Properties:
-      Description: 'Allow egress traffic to SageMaker'
+      Description: "Allow egress traffic to SageMaker"
       IpProtocol: -1
       DestinationSecurityGroupId: !GetAtt SageMakerSecurityGroup.GroupId
       GroupId: !Ref LambdaSecurityGroup
@@ -391,7 +390,7 @@ Resources:
   LambdaSecurityGroupSelfEgress:
     Type: AWS::EC2::SecurityGroupEgress
     Properties:
-      Description: 'Allow egress traffic to within'
+      Description: "Allow egress traffic to within"
       IpProtocol: -1
       DestinationSecurityGroupId: !GetAtt LambdaSecurityGroup.GroupId
       GroupId: !Ref LambdaSecurityGroup
@@ -399,7 +398,7 @@ Resources:
   SageMakerSecurityGroupLambdaEgress:
     Type: AWS::EC2::SecurityGroupEgress
     Properties:
-      Description: 'Allow egress traffic to Lambda'
+      Description: "Allow egress traffic to Lambda"
       IpProtocol: -1
       DestinationSecurityGroupId: !GetAtt LambdaSecurityGroup.GroupId
       GroupId: !Ref SageMakerSecurityGroup
@@ -407,7 +406,7 @@ Resources:
   SageMakerSecurityGroupMSKEgress:
     Type: AWS::EC2::SecurityGroupEgress
     Properties:
-      Description: 'Allow egress traffic to MSK'
+      Description: "Allow egress traffic to MSK"
       IpProtocol: -1
       DestinationSecurityGroupId: !GetAtt MSKSecurityGroup.GroupId
       GroupId: !Ref SageMakerSecurityGroup
@@ -415,7 +414,7 @@ Resources:
   SageMakerSecurityGroupSelfEgress:
     Type: AWS::EC2::SecurityGroupEgress
     Properties:
-      Description: 'Allow egress traffic to within'
+      Description: "Allow egress traffic to within"
       IpProtocol: -1
       DestinationSecurityGroupId: !GetAtt SageMakerSecurityGroup.GroupId
       GroupId: !Ref SageMakerSecurityGroup
@@ -423,26 +422,26 @@ Resources:
   SageMakerSecurityGroupAllIPv4TrafficEgress:
     Type: AWS::EC2::SecurityGroupEgress
     Properties:
-      Description: 'Allow all ipv4 egress traffic'
+      Description: "Allow all ipv4 egress traffic"
       IpProtocol: -1
-      CidrIp: '0.0.0.0/0'
+      CidrIp: "0.0.0.0/0"
       GroupId: !Ref SageMakerSecurityGroup
 
   SageMakerSecurityGroupAllIPv6TrafficEgress:
     Type: AWS::EC2::SecurityGroupEgress
     Properties:
-      Description: 'Allow all ipv4 egress traffic'
+      Description: "Allow all ipv4 egress traffic"
       IpProtocol: -1
-      CidrIpv6: '::/0'
+      CidrIpv6: "::/0"
       GroupId: !Ref SageMakerSecurityGroup
 
-# IAM Roles and Policies
+  # IAM Roles and Policies
 
   SageMakerExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub '${AWS::StackName}SageMakerExecutionRole'
-      Description: 'SageMaker Execution Role'
+      RoleName: !Sub "${AWS::StackName}SageMakerExecutionRole"
+      Description: "SageMaker Execution Role"
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -457,13 +456,13 @@ Resources:
         - arn:aws:iam::aws:policy/AWSLambda_ReadOnlyAccess
         - arn:aws:iam::aws:policy/AmazonSageMakerFullAccess
       Tags:
-        - Key: 'Name'
-          Value: !Join [ "", [ !Ref "AWS::StackName","SageMakerExecutionRole" ] ]
+        - Key: "Name"
+          Value: !Join ["", [!Ref "AWS::StackName", "SageMakerExecutionRole"]]
 
   SageMakerIAMAccessPolicy:
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: !Sub '${AWS::StackName}SageMakerIAMAccessPolicy'
+      PolicyName: !Sub "${AWS::StackName}SageMakerIAMAccessPolicy"
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -480,14 +479,14 @@ Resources:
               - iam:GetRole
               - iam:GetRolePolicy
               - iam:SimulatePrincipalPolicy
-            Resource: !Sub 'arn:aws:iam::${AWS::AccountId}:*'
+            Resource: !Sub "arn:aws:iam::${AWS::AccountId}:*"
       Roles:
-        - Ref: 'SageMakerExecutionRole'
+        - Ref: "SageMakerExecutionRole"
 
   SageMakerCloudWatchMetricsAccessPolicy:
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: !Sub '${AWS::StackName}SageMakerCloudWatchMetricsAccessPolicy'
+      PolicyName: !Sub "${AWS::StackName}SageMakerCloudWatchMetricsAccessPolicy"
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -500,14 +499,14 @@ Resources:
               - cloudwatch:ListMetrics
               - cloudwatch:PutMetricAlarm
               - cloudwatch:PutMetricData
-            Resource: '*'
+            Resource: "*"
       Roles:
         - Ref: "SageMakerExecutionRole"
 
   SageMakerCloudWatchLogsAccessPolicy:
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: !Sub '${AWS::StackName}SageMakerCloudWatchLogsAccessPolicy'
+      PolicyName: !Sub "${AWS::StackName}SageMakerCloudWatchLogsAccessPolicy"
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -526,14 +525,14 @@ Resources:
               - logs:ListLogDeliveries
               - logs:PutResourcePolicy
               - logs:UpdateLogDelivery
-            Resource: 'arn:aws:logs:*:*:*'
+            Resource: "arn:aws:logs:*:*:*"
       Roles:
         - Ref: "SageMakerExecutionRole"
 
   SageMakerMSKAccessPolicy:
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: !Sub '${AWS::StackName}SageMakerMSKAccessPolicy'
+      PolicyName: !Sub "${AWS::StackName}SageMakerMSKAccessPolicy"
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -560,14 +559,14 @@ Resources:
               - kafka-cluster:ReadData
               - kafka-cluster:AlterGroup
               - kafka-cluster:DescribeGroup
-            Resource: !Sub  'arn:aws:kafka:${AWS::Region}:${AWS::AccountId}:*'
+            Resource: !Sub "arn:aws:kafka:${AWS::Region}:${AWS::AccountId}:*"
       Roles:
         - Ref: "SageMakerExecutionRole"
 
   SageMakerCloudFormationAccessPolicy:
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: !Sub '${AWS::StackName}SageMakerCloudFormationAccessPolicy'
+      PolicyName: !Sub "${AWS::StackName}SageMakerCloudFormationAccessPolicy"
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -575,14 +574,14 @@ Resources:
             Action:
               - cloudformation:DescribeStackResource
               - cloudformation:DescribeStacks
-            Resource: !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:*'
+            Resource: !Sub "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:*"
       Roles:
         - Ref: "SageMakerExecutionRole"
 
   SageMakerS3AccessPolicy:
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: !Sub '${AWS::StackName}SageMakerS3AccessPolicy'
+      PolicyName: !Sub "${AWS::StackName}SageMakerS3AccessPolicy"
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -595,14 +594,14 @@ Resources:
               - s3:DeleteObject
               - s3:DeleteObjectVersion
               - s3:DeleteObject
-            Resource: !Sub 'arn:aws:s3:::*'
+            Resource: !Sub "arn:aws:s3:::*"
       Roles:
         - Ref: "SageMakerExecutionRole"
 
   SageMakerBedrockAccessPolicy:
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: !Sub '${AWS::StackName}SageMakerBedrockAccessPolicy'
+      PolicyName: !Sub "${AWS::StackName}SageMakerBedrockAccessPolicy"
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -633,14 +632,14 @@ Resources:
               - bedrock:UpdateDataSource
               - bedrock:UpdateKnowledgeBase
               - bedrock:ListKnowledgeBases
-            Resource: '*'
+            Resource: "*"
       Roles:
         - Ref: "SageMakerExecutionRole"
 
   SageMakerLambdaAccessPolicy:
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: !Sub '${AWS::StackName}SageMakerLambdaAccessPolicy'
+      PolicyName: !Sub "${AWS::StackName}SageMakerLambdaAccessPolicy"
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -662,15 +661,15 @@ Resources:
               - lambda:CreateEventSourceMapping
               - lambda:UpdateFunctionConfiguration
               - lambda:GetFunctionConfiguration
-            Resource: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:*'
+            Resource: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:*"
       Roles:
         - Ref: "SageMakerExecutionRole"
 
   LambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub '${AWS::StackName}LambdaExecutionRole'
-      Description: 'Lambda Execution Role'
+      RoleName: !Sub "${AWS::StackName}LambdaExecutionRole"
+      Description: "Lambda Execution Role"
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -682,13 +681,13 @@ Resources:
               - "sts:AssumeRole"
       Path: /
       Tags:
-        - Key: 'Name'
-          Value: !Join [ "", [ !Ref "AWS::StackName","LambdaExecutionRole" ] ]
+        - Key: "Name"
+          Value: !Join ["", [!Ref "AWS::StackName", "LambdaExecutionRole"]]
 
   LambdaBedrockAccessPolicy:
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: !Sub '${AWS::StackName}LambdaBedrockAccessPolicy'
+      PolicyName: !Sub "${AWS::StackName}LambdaBedrockAccessPolicy"
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -718,14 +717,14 @@ Resources:
               - bedrock:UpdateAgentKnowledgeBase
               - bedrock:UpdateDataSource
               - bedrock:UpdateKnowledgeBase
-            Resource: '*'
+            Resource: "*"
       Roles:
-        - Ref: 'LambdaExecutionRole'
+        - Ref: "LambdaExecutionRole"
 
   LambdaMSKAccessPolicy:
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: !Sub '${AWS::StackName}SageMakerMSKAccessPolicy'
+      PolicyName: !Sub "${AWS::StackName}SageMakerMSKAccessPolicy"
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -740,14 +739,14 @@ Resources:
               - kafka-cluster:DescribeGroup
               - kafka-cluster:DescribeClusterDynamicConfiguration
               - kafka-cluster:AlterGroup
-            Resource: !Sub  'arn:aws:kafka:${AWS::Region}:${AWS::AccountId}:*'
+            Resource: !Sub "arn:aws:kafka:${AWS::Region}:${AWS::AccountId}:*"
       Roles:
         - Ref: "LambdaExecutionRole"
 
   LambdaCloudWatchMetricsAccessPolicy:
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: !Sub '${AWS::StackName}LambdaCloudWatchMetricsAccessPolicy'
+      PolicyName: !Sub "${AWS::StackName}LambdaCloudWatchMetricsAccessPolicy"
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -760,14 +759,14 @@ Resources:
               - cloudwatch:ListMetrics
               - cloudwatch:PutMetricAlarm
               - cloudwatch:PutMetricData
-            Resource: '*'
+            Resource: "*"
       Roles:
         - Ref: "LambdaExecutionRole"
 
   LambdaCloudWatchLogsAccessPolicy:
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: !Sub '${AWS::StackName}LambdaCloudWatchLogsAccessPolicy'
+      PolicyName: !Sub "${AWS::StackName}LambdaCloudWatchLogsAccessPolicy"
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -786,14 +785,14 @@ Resources:
               - logs:ListLogDeliveries
               - logs:PutResourcePolicy
               - logs:UpdateLogDelivery
-            Resource: 'arn:aws:logs:*:*:*'
+            Resource: "arn:aws:logs:*:*:*"
       Roles:
         - Ref: "LambdaExecutionRole"
 
   LambdaENIAccessPolicy:
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: !Sub '${AWS::StackName}LambdaENIAccessPolicy'
+      PolicyName: !Sub "${AWS::StackName}LambdaENIAccessPolicy"
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -807,11 +806,11 @@ Resources:
               - ec2:DescribeSecurityGroups
               - ec2:DescribeSubnets
               - ec2:DescribeVpcs
-            Resource: '*'
+            Resource: "*"
       Roles:
         - Ref: "LambdaExecutionRole"
 
-# Lambda Function
+  # Lambda Function
 
   KafkaConsumerLambdaFunction:
     Type: AWS::Lambda::Function
@@ -822,8 +821,8 @@ Resources:
       - LambdaMSKAccessPolicy
       - LambdaBedrockAccessPolicy
     Properties:
-      FunctionName: !Sub '${AWS::StackName}KafkaConsumerLambdaFunction'
-      Description: 'Kafka Consumer Lambda Function'
+      FunctionName: !Sub "${AWS::StackName}KafkaConsumerLambdaFunction"
+      Description: "Kafka Consumer Lambda Function - v2 exponential backoff, dynamic topic, tz-aware datetime"
       ReservedConcurrentExecutions: 1
       Handler: index.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
@@ -832,14 +831,15 @@ Resources:
       Layers:
         - !Ref Boto3LayerArn
       Tags:
-        - Key: 'Name'
-          Value: !Join [ "", [ !Ref "AWS::StackName","KafkaConsumerLambdaFunction" ] ]
+        - Key: "Name"
+          Value:
+            !Join ["", [!Ref "AWS::StackName", "KafkaConsumerLambdaFunction"]]
       VpcConfig:
         SecurityGroupIds:
-          - Ref: 'LambdaSecurityGroup'
+          - Ref: "LambdaSecurityGroup"
         SubnetIds:
-          - Ref: 'PrivateSubnet1'
-          - Ref: 'PrivateSubnet2'
+          - Ref: "PrivateSubnet1"
+          - Ref: "PrivateSubnet2"
       Code:
         ZipFile: !Sub
           - |
@@ -847,15 +847,38 @@ Resources:
             import json
             import base64
             import logging
+            import random
             import time
             import uuid
-            from datetime import datetime
+            from datetime import datetime, timezone
 
             import boto3
             import botocore
             from botocore.exceptions import ClientError
 
-            bedrock_agent_client = boto3.client('bedrock-agent')
+            bedrock_agent_client = boto3.client('bedrock-agent', region_name='us-east-1')
+
+            MAX_RETRIES = 5
+            BASE_DELAY = 1.0
+            MAX_DELAY = 30.0
+
+            def ingest_with_backoff(client, kb_id, ds_id, documents):
+                for attempt in range(MAX_RETRIES):
+                    try:
+                        response = client.ingest_knowledge_base_documents(
+                            knowledgeBaseId=kb_id,
+                            dataSourceId=ds_id,
+                            documents=documents
+                        )
+                        return response
+                    except botocore.exceptions.ClientError as error:
+                        error_code = error.response['Error']['Code']
+                        if error_code == 'ThrottlingException' and attempt < MAX_RETRIES - 1:
+                            delay = min(BASE_DELAY * (2 ** attempt) + random.uniform(0, 1), MAX_DELAY)
+                            print(f'ThrottlingException, retrying in {delay:.1f}s (attempt {attempt + 1}/{MAX_RETRIES})')
+                            time.sleep(delay)
+                        else:
+                            raise
 
             def lambda_handler(event, context):
                 print(f'boto3 version: {boto3.__version__}')
@@ -870,52 +893,44 @@ Resources:
                 print('## EVENT')
                 print(event)
 
-                records = event['records']['streamtopic-0']
-
-                for rec in records:
-                    # Each record has separate eventID, etc.
-                    print('## RECORD')
-                    event_payload = decode_payload(rec['value'])
-                    print('Decoded event main', event_payload)
-                    ticker = event_payload['ticker']
-                    price = event_payload['price']
-                    timestamp = event_payload['timestamp']
-                    myuuid = uuid.uuid4()
-                    print('## RECORD UUID', str(myuuid))
-                    print('## TICKER: ', ticker)
-                    print('## PRICE: ', price)
-                    payload_ts = datetime.utcfromtimestamp(timestamp).strftime('%Y-%m-%d %H:%M:%S')
-                    print('## TIMESTAMP: ', payload_ts)
-                    payload_string = "At " + payload_ts + " the price of " + ticker + " is " + str(price) + "."
-                    print('## PAYLOAD STRING: ', payload_string)
-                    time.sleep(5)
-                    try:
-                        ingest_knowledge_base_documents_response = bedrock_agent_client.ingest_knowledge_base_documents(
-                            knowledgeBaseId = kb_id,
-                            dataSourceId = ds_id,
-                            documents= [
-                                {
-                                    'content': {
-                                        'custom' : {
-                                            'customDocumentIdentifier': {
-                                                'id' : str(myuuid)
-                                            },
-                                            'inlineContent' : {
-                                                'textContent' : {
-                                                    'data' : payload_string
-                                                },
-                                                'type' : 'TEXT'
-                                            },
-                                            'sourceType' : 'IN_LINE'
+                for topic_partition, records in event['records'].items():
+                    print(f'## PROCESSING: {topic_partition}')
+                    for rec in records:
+                        print('## RECORD')
+                        event_payload = decode_payload(rec['value'])
+                        print('Decoded event main', event_payload)
+                        ticker = event_payload['ticker']
+                        price = event_payload['price']
+                        timestamp = event_payload['timestamp']
+                        myuuid = uuid.uuid4()
+                        print('## RECORD UUID', str(myuuid))
+                        print('## TICKER: ', ticker)
+                        print('## PRICE: ', price)
+                        payload_ts = datetime.fromtimestamp(timestamp, tz=timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+                        print('## TIMESTAMP: ', payload_ts)
+                        payload_string = "At " + payload_ts + " the price of " + ticker + " is " + str(price) + "."
+                        print('## PAYLOAD STRING: ', payload_string)
+                        documents = [
+                            {
+                                'content': {
+                                    'custom' : {
+                                        'customDocumentIdentifier': {
+                                            'id' : str(myuuid)
                                         },
-                                        'dataSourceType' : 'CUSTOM'
-                                    }
+                                        'inlineContent' : {
+                                            'textContent' : {
+                                                'data' : payload_string
+                                            },
+                                            'type' : 'TEXT'
+                                        },
+                                        'sourceType' : 'IN_LINE'
+                                    },
+                                    'dataSourceType' : 'CUSTOM'
                                 }
-                            ]
-                        )
-                        print('## INGEST KNOWLEDGE BASE DOCUMENTS RESPONSE: ', ingest_knowledge_base_documents_response)
-                    except botocore.exceptions.ClientError as error:
-                        raise error
+                            }
+                        ]
+                        response = ingest_with_backoff(bedrock_agent_client, kb_id, ds_id, documents)
+                        print('## INGEST KNOWLEDGE BASE DOCUMENTS RESPONSE: ', response)
 
                 return {
                     'statusCode': 200,
@@ -932,7 +947,7 @@ Resources:
                 return event_payload
           - Region: !Ref AWS::Region
 
-# MSK Cluster
+  # MSK Cluster
 
   MSKLogGroup:
     Type: AWS::Logs::LogGroup
@@ -952,7 +967,7 @@ Resources:
         StorageInfo:
           EBSStorageInfo:
             VolumeSize: 5
-      ClusterName: !Sub '${AWS::StackName}MSKCluster'
+      ClusterName: !Sub "${AWS::StackName}MSKCluster"
       LoggingInfo:
         BrokerLogs:
           CloudWatchLogs:
@@ -970,7 +985,7 @@ Resources:
         Unauthenticated:
           Enabled: true
 
-# SageMaker Studio
+  # SageMaker Studio
 
   StudioDomain:
     Type: AWS::SageMaker::Domain
@@ -996,7 +1011,7 @@ Resources:
         SecurityGroups: [!Ref SageMakerSecurityGroup]
         StudioWebPortal: ENABLED
         DefaultLandingUri: "studio::"
-      DomainName: !Sub '${AWS::StackName}SageMakerStudioDomain'
+      DomainName: !Sub "${AWS::StackName}SageMakerStudioDomain"
       DomainSettings:
         SecurityGroupIds:
           - !Ref SageMakerSecurityGroup
@@ -1010,7 +1025,7 @@ Resources:
       SubnetIds:
         - !Ref PrivateSubnet1
         - !Ref PrivateSubnet2
-      VpcId: !Ref 'VPC'
+      VpcId: !Ref "VPC"
 
   UserProfile:
     Type: AWS::SageMaker::UserProfile
@@ -1018,9 +1033,9 @@ Resources:
       - StudioDomain
     Properties:
       DomainId: !GetAtt StudioDomain.DomainId
-      UserProfileName: !Sub '${AWS::StackName}SageMakerUserProfile'
+      UserProfileName: !Sub "${AWS::StackName}SageMakerUserProfile"
       UserSettings:
-        DefaultLandingUri: 'studio::'
+        DefaultLandingUri: "studio::"
         ExecutionRole: !GetAtt SageMakerExecutionRole.Arn
         SecurityGroups: [!Ref SageMakerSecurityGroup]
 

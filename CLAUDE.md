@@ -16,6 +16,10 @@ Sample project demonstrating stream ingestion from Apache Kafka (Amazon MSK) to 
 - `templates/` - CloudFormation template for infrastructure provisioning
 - `notebooks/` - Jupyter notebooks for setup, testing, and cleanup
 - `notebooks/TestData.csv` - Test data for stream ingestion (CSV with ticker and price columns)
+- `docs/msk-lambda-integration.md` - MSK-Lambda Event Source Mapping の連携仕組み、リトライ挙動、本プロジェクトの設定
+- `docs/cost-analysis-lambda-msk.md` - Lambda・MSK 構成のコスト分析
+- `docs/plan.md` - Lambda コード 3 改善の実装計画と検証結果
+- `docs/research.md` - プロジェクト調査メモ
 
 ## Architecture Flow
 
@@ -51,7 +55,7 @@ Default Kafka topic: `streamtopic`
 # Output includes: Boto3LayerArn for CloudFormation parameter: arn:aws:lambda:REGION:ACCOUNT:layer:boto3-layer:VERSION
 ```
 
-2. Deploy CloudFormation stack (pass the layer ARN from step 1):
+1. Deploy CloudFormation stack (pass the layer ARN from step 1):
 
 ```bash
 # With default Knowledge Base and Data Source names
@@ -72,7 +76,7 @@ aws cloudformation create-stack \
   --capabilities CAPABILITY_NAMED_IAM
 ```
 
-3. Wait for stack creation (20-30 minutes for MSK cluster):
+1. Wait for stack creation (20-30 minutes for MSK cluster):
 
 ```bash
 aws cloudformation wait stack-create-complete --stack-name BedrockStreamIngest
@@ -104,9 +108,9 @@ aws cloudformation update-stack \
 aws cloudformation wait stack-update-complete --stack-name BedrockStreamIngest
 ```
 
-4. Access SageMaker Studio from AWS Console and open `notebooks/1.Setup.ipynb`
+1. Access SageMaker Studio from AWS Console and open `notebooks/1.Setup.ipynb`
 
-5. Run all cells in `1.Setup.ipynb` sequentially:
+2. Run all cells in `1.Setup.ipynb` sequentially:
 
    - Checks and upgrades boto3/botocore to version >= 1.42.46 in the SageMaker notebook environment (required for MSK Topic Management API; Lambda uses a layer for boto3)
    - Retrieves MSK cluster ARN and bootstrap broker string
@@ -157,10 +161,11 @@ Embedded in CloudFormation template:
 - Timeout: 900 seconds
 - Reserved concurrency: 1
 - Uses a Lambda layer for boto3 >= 1.42.46 (no runtime pip install; create with `scripts/build-boto3-layer.sh`)
+- Iterates over all topic-partitions in `event['records']` dynamically (no hardcoded topic name)
 - Decodes base64-encoded Kafka messages
 - Constructs text payload: "At {timestamp} the price of {ticker} is {price}."
 - Generates UUID for each document
-- Calls `ingest_knowledge_base_documents()` with inline text content
+- Calls `ingest_knowledge_base_documents()` via `ingest_with_backoff()` helper with exponential backoff + jitter (retries on ThrottlingException, max 5 attempts)
 
 ### Required Environment Variables (Lambda)
 
@@ -263,4 +268,5 @@ for path in ['notebooks/1.Setup.ipynb', 'notebooks/2.StreamIngest.ipynb', 'noteb
 - [Amazon MSK Kafka Topics Public APIs](https://aws.amazon.com/jp/about-aws/whats-new/2026/02/amazon-msk-kafka-topics-public-apis/) - Announcement of CreateTopic, UpdateTopic, and DeleteTopic APIs
 - [MSK CreateTopic API - Boto3 Documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/kafka/client/create_topic.html) - API reference for programmatic topic creation
 - [Lambda reserved concurrency](https://docs.aws.amazon.com/lambda/latest/dg/configuration-concurrency.html) - Configuring reserved concurrency for a function
+- [Using Lambda with Amazon MSK](https://docs.aws.amazon.com/lambda/latest/dg/with-msk.html) - Lambda and MSK integration (Event Source Mapping, retry behavior)
 - [What is MSK Serverless?](https://docs.aws.amazon.com/msk/latest/developerguide/serverless.html) - MSK Serverless overview and when to use
