@@ -165,7 +165,9 @@ Embedded in CloudFormation template:
 - Decodes base64-encoded Kafka messages
 - Constructs text payload: "At {timestamp} the price of {ticker} is {price}."
 - Generates UUID for each document
+- Batches up to 10 documents per API call (IngestKnowledgeBaseDocuments API limit: 10 documents/request)
 - Calls `ingest_knowledge_base_documents()` via `ingest_with_backoff()` helper with exponential backoff + jitter (retries on ThrottlingException, max 5 attempts)
+- Implements rate limiting with configurable inter-batch delay (`BATCH_DELAY` environment variable, default: 2.0 seconds) to proactively avoid throttling (API limit: 5 RPS)
 
 ### Required Environment Variables (Lambda)
 
@@ -173,6 +175,7 @@ Set automatically by `1.Setup.ipynb`:
 
 - `KBID`: Bedrock Knowledge Base ID
 - `DSID`: Custom Data Source ID
+- `BATCH_DELAY` (optional): Inter-batch delay in seconds to avoid API throttling. Default: 2.0. Can be tuned via Lambda environment variables without redeployment
 
 ### Bedrock Knowledge Base Configuration
 
