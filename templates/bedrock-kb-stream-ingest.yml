@@ -969,8 +969,8 @@ Resources:
           ClientBroker: TLS_PLAINTEXT
           InCluster: false
       EnhancedMonitoring: DEFAULT
-      # Kafka 3.8.x is the AWS recommended version as documented in Supported Apache Kafka versions(https://docs.aws.amazon.com/msk/latest/developerguide/supported-kafka-versions.html).
-      KafkaVersion: 3.8.x
+      # Kafka 3.9.x is the AWS recommended version as documented in Supported Apache Kafka versions(https://docs.aws.amazon.com/msk/latest/developerguide/supported-kafka-versions.html).
+      KafkaVersion: 3.9.x
       NumberOfBrokerNodes: 2
       ClientAuthentication:
         Unauthenticated:
